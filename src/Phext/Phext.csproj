@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Phext</RootNamespace>
+    <AssemblyName>LibPhext</AssemblyName>
+    <Version>0.3.0</Version>
+    <Authors>Will Bickford</Authors>
+    <Company>Phext, Inc.</Company>
+    <Description>The Fourth Root - C# implementation of phext (11-dimensional plain hypertext)</Description>
+    <Copyright>Copyright (c) 2024-2025 Will Bickford (Phext, Inc.)</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://phext.io</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/wbic16/libphext-cs</RepositoryUrl>
+    <PackageTags>phext;hypertext;11-dimensional;coordinate;text</PackageTags>
+  </PropertyGroup>
+
+</Project>

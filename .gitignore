@@ -1,0 +1,5 @@
+.vs/*
+src/Phext/bin/*
+src/Phext/obj/*
+tests/bin/*
+tests/obj/*
