@@ -11,7 +11,20 @@ using Phext;
 
 namespace Phext.Tests;
 
-public class CoordinateTests
+public class Constants
+{
+    public const char SB = PhextConstants.SCROLL_BREAK;
+    public const char SN = PhextConstants.SECTION_BREAK;
+    public const char CH = PhextConstants.CHAPTER_BREAK;
+    public const char BK = PhextConstants.BOOK_BREAK;
+    public const char VM = PhextConstants.VOLUME_BREAK;
+    public const char CN = PhextConstants.COLLECTION_BREAK;
+    public const char SR = PhextConstants.SERIES_BREAK;
+    public const char SF = PhextConstants.SHELF_BREAK;
+    public const char LB = PhextConstants.LIBRARY_BREAK;
+}
+
+public class CoordinateTests : Constants
 {
     [Fact]
     public void Test_CoordinateParsing()
@@ -80,7 +93,7 @@ public class CoordinateTests
     }
 }
 
-public class PhextBreakTests
+public class PhextBreakTests : Constants
 {
     [Fact]
     public void Test_LineBreak()
@@ -131,7 +144,7 @@ public class PhextBreakTests
     [Fact]
     public void Test_Chapters()
     {
-        string sample = "Chapter Alpha" + PhextConstants.CHAPTER_BREAK + "Chapter Beta" + PhextConstants.CHAPTER_BREAK + "Chapter Gamma";
+        string sample = "Chapter Alpha" + CH + "Chapter Beta" + CH + "Chapter Gamma";
 
         var coord1 = Coordinate.FromString("1.1.1/1.1.1/1.1.1");
         Assert.Equal("Chapter Alpha", PhextEngine.Fetch(sample, coord1));
@@ -146,7 +159,7 @@ public class PhextBreakTests
     [Fact]
     public void Test_Books()
     {
-        string sample = "Book z1" + PhextConstants.BOOK_BREAK + "Book Something Else #2" + PhextConstants.BOOK_BREAK + "Book Part 3";
+        string sample = "Book z1" + BK + "Book Something Else #2" + BK + "Book Part 3";
 
         var coord1 = Coordinate.FromString("1.1.1/1.1.1/1.1.1");
         Assert.Equal("Book z1", PhextEngine.Fetch(sample, coord1));
@@ -176,7 +189,7 @@ public class PhextBreakTests
     [Fact]
     public void Test_Collections()
     {
-        string sample = "Collection 1-1-1" + PhextConstants.COLLECTION_BREAK + "Collection 2-1-1" + PhextConstants.COLLECTION_BREAK + "Collection 3-1-1";
+        string sample = "Collection 1-1-1" + CN + "Collection 2-1-1" + CN + "Collection 3-1-1";
 
         var coord1 = Coordinate.FromString("1.1.1/1.1.1/1.1.1");
         Assert.Equal("Collection 1-1-1", PhextEngine.Fetch(sample, coord1));
@@ -236,64 +249,64 @@ public class PhextBreakTests
 
 public class PhextOperationTests
 {
+    const char SB = PhextConstants.SCROLL_BREAK;
+    const char SN = PhextConstants.SECTION_BREAK;
+    const char CH = PhextConstants.CHAPTER_BREAK;
+    const char BK = PhextConstants.BOOK_BREAK;
+    const char VM = PhextConstants.VOLUME_BREAK;
+    const char CN = PhextConstants.COLLECTION_BREAK;
+    const char SR = PhextConstants.SERIES_BREAK;
+    const char SF = PhextConstants.SHELF_BREAK;
+    const char LB = PhextConstants.LIBRARY_BREAK;
+
     [Fact]
     public void Test_CoordinateBasedInsert()
     {
-        string test = "aaa" + PhextConstants.LIBRARY_BREAK + "bbb" + PhextConstants.SCROLL_BREAK + "ccc";
+        string test = "aaa" + LB + "bbb" + SB + "ccc";
 
         var coord1 = Coordinate.FromString("2.1.1/1.1.1/1.1.3");
         var update1 = PhextEngine.Insert(test, coord1, "ddd");
-        Assert.Equal("aaa" + PhextConstants.LIBRARY_BREAK + "bbb" + PhextConstants.SCROLL_BREAK + "ccc" + PhextConstants.SCROLL_BREAK + "ddd", update1);
+        Assert.Equal("aaa" + LB + "bbb" + SB + "ccc" + SB + "ddd", update1);
 
         var coord2 = Coordinate.FromString("2.1.1/1.1.1/1.1.4");
         var update2 = PhextEngine.Insert(update1, coord2, "eee");
-        Assert.Equal("aaa" + PhextConstants.LIBRARY_BREAK + "bbb" + PhextConstants.SCROLL_BREAK + "ccc" + PhextConstants.SCROLL_BREAK + "ddd" + PhextConstants.SCROLL_BREAK + "eee", update2);
+        Assert.Equal("aaa" + LB + "bbb" + SB + "ccc" + SB + "ddd" + SB + "eee", update2);
 
         var coord3 = Coordinate.FromString("2.1.1/1.1.1/1.2.1");
         var update3 = PhextEngine.Insert(update2, coord3, "fff");
-        Assert.Equal("aaa" + PhextConstants.LIBRARY_BREAK + "bbb" + PhextConstants.SCROLL_BREAK + "ccc" + PhextConstants.SCROLL_BREAK + "ddd" + PhextConstants.SCROLL_BREAK + "eee" + PhextConstants.SECTION_BREAK + "fff", update3);
+        Assert.Equal("aaa" + LB + "bbb" + SB + "ccc" + SB + "ddd" + SB + "eee" + SN + "fff", update3);
 
         var coord4 = Coordinate.FromString("2.1.1/1.1.1/1.2.2");
         var update4 = PhextEngine.Insert(update3, coord4, "ggg");
-        Assert.Equal("aaa" + PhextConstants.LIBRARY_BREAK + "bbb" + PhextConstants.SCROLL_BREAK + "ccc" + PhextConstants.SCROLL_BREAK + "ddd" + PhextConstants.SCROLL_BREAK + "eee" + PhextConstants.SECTION_BREAK + "fff" + PhextConstants.SCROLL_BREAK + "ggg", update4);
+        Assert.Equal("aaa" + LB + "bbb" + SB + "ccc" + SB + "ddd" + SB + "eee" + SN + "fff" + SB + "ggg", update4);
 
         var coord5 = Coordinate.FromString("2.1.1/1.1.1/2.1.1");
         var update5 = PhextEngine.Insert(update4, coord5, "hhh");
-        Assert.Equal("aaa" + PhextConstants.LIBRARY_BREAK + "bbb" + PhextConstants.SCROLL_BREAK + "ccc" + PhextConstants.SCROLL_BREAK + "ddd" + PhextConstants.SCROLL_BREAK + "eee" + PhextConstants.SECTION_BREAK + "fff" + PhextConstants.SCROLL_BREAK + "ggg" + PhextConstants.CHAPTER_BREAK + "hhh", update5);
+        Assert.Equal("aaa" + LB + "bbb" + SB + "ccc" + SB + "ddd" + SB + "eee" + SN + "fff" + SB + "ggg" + CH + "hhh", update5);
     }
 
     [Fact]
     public void Test_CoordinateBasedReplace()
     {
-        string test = "aaa\x17bbb\x18ccc\x19ddd\x1Aeee\x1Cfff\x1Dggg\x1Ehhh\x1Fiii\x01jjj";
+        string test = "aaa" + SB + "bbb" + SN + "ccc" + CH + "ddd" + BK + "eee" + VM + "fff" + CN + "ggg" + SR + "hhh" + SF + "iii" + LB + "jjj";
 
         var coord1 = Coordinate.FromString("1.1.1/1.1.1/1.1.1");
         var update1 = PhextEngine.Replace(test, coord1, "AAA");
-        Assert.Equal("AAA\x17bbb\x18ccc\x19ddd\x1Aeee\x1Cfff\x1Dggg\x1Ehhh\x1Fiii\x01jjj", update1);
+        Assert.Equal("AAA" + SB + "bbb" + SN + "ccc" + CH + "ddd" + BK + "eee" + VM + "fff" + CN + "ggg" + SR + "hhh" + SF + "iii" + LB + "jjj", update1);
 
         var coord2 = Coordinate.FromString("1.1.1/1.1.1/1.1.2");
         var update2 = PhextEngine.Replace(update1, coord2, "222");
-        Assert.Equal("AAA\x17222\x18ccc\x19ddd\x1Aeee\x1Cfff\x1Dggg\x1Ehhh\x1Fiii\x01jjj", update2);
+        Assert.Equal("AAA" + SB + "222" + SN + "ccc" + CH + "ddd" + BK + "eee" + VM + "fff" + CN + "ggg" + SR + "hhh" + SF + "iii" + LB + "jjj", update2);
     }
 
     [Fact]
     public void Test_CoordinateBasedRemove()
     {
-        const char SB = PhextConstants.SCROLL_BREAK;
-        const char SN = PhextConstants.SECTION_BREAK;
-        const char CH = PhextConstants.CHAPTER_BREAK;
-        const char BK = PhextConstants.BOOK_BREAK;
-        const char VM = PhextConstants.VOLUME_BREAK;
-        const char CN = PhextConstants.COLLECTION_BREAK;
-        const char SR = PhextConstants.SERIES_BREAK;
-        const char SF = PhextConstants.SHELF_BREAK;
-        const char LB = PhextConstants.LIBRARY_BREAK;
-
         string test = "aaa" + SB + "bbb" + SN + "ccc" + CH + "ddd" + BK + "eee" + VM + "fff" + CN + "ggg" + SR + "hhh" + SF + "iii" + LB + "jjj";
 
         var coord1 = Coordinate.FromString("1.1.1/1.1.1/1.1.1");
         var update1 = PhextEngine.Remove(test, coord1);
-        Assert.Equal(LB + "bbb" + SN + "ccc" + CH + "ddd" + BK + "eee" + VM + "fff" + CN + "ggg" + SR + "hhh" + SF + "iii" + LB + "jjj", update1);
+        Assert.Equal(SB + "bbb" + SN + "ccc" + CH + "ddd" + BK + "eee" + VM + "fff" + CN + "ggg" + SR + "hhh" + SF + "iii" + LB + "jjj", update1);
 
         var coord2 = Coordinate.FromString("1.1.1/1.1.1/1.1.2");
         var update2 = PhextEngine.Remove(update1, coord2);
@@ -303,38 +316,38 @@ public class PhextOperationTests
     [Fact]
     public void Test_RangeBasedReplace()
     {
-        string doc1 = "Before\x19text to be replaced\x1Calso this\x1Dand this\x17After";
+        string doc1 = "Before" + CH + "text to be replaced" + VM + "also this" + CN + "and this" + SB + "After";
         var range1 = new Range(
             Coordinate.FromString("1.1.1/1.1.1/2.1.1"),
             Coordinate.FromString("1.1.1/2.1.1/1.1.1")
         );
         var update1 = PhextEngine.RangeReplace(doc1, range1, "");
-        Assert.Equal("Before\x19\x17After", update1);
+        Assert.Equal("Before" + CH + SB + "After", update1);
 
-        string doc2 = "Before\x01Library two\x01Library three\x01Library four";
+        string doc2 = "Before" + LB + "Library two" + LB + "Library three" + LB + "Library four";
         var range2 = new Range(
             Coordinate.FromString("2.1.1/1.1.1/1.1.1"),
             Coordinate.FromString("3.1.1/1.1.1/1.1.1")
         );
         var update2 = PhextEngine.RangeReplace(doc2, range2, "");
-        Assert.Equal("Before\x01\x01Library four", update2);
+        Assert.Equal("Before" + LB + LB + "Library four", update2);
     }
 
     [Fact]
     public void Test_NextScroll()
     {
-        string doc1 = "3A\x17B2\x18C1";
+        string doc1 = "3A" + SB + "B2" + SN + "C1";
         var (scroll, nextStart, remaining) = PhextEngine.NextScroll(doc1, Coordinate.FromString("1.1.1/1.1.1/1.1.1"));
         Assert.Equal("1.1.1/1.1.1/1.1.1", scroll.Coord.ToString());
         Assert.Equal("3A", scroll.Scroll);
         Assert.Equal("1.1.1/1.1.1/1.1.2", nextStart.ToString());
-        Assert.Equal("B2\x18C1", remaining);
+        Assert.Equal("B2" + SN + "C1", remaining);
     }
 
     [Fact]
     public void Test_Phokenize()
     {
-        string doc1 = "one\x17two\x17three\x17four";
+        string doc1 = "one" + SB + "two" + SB + "three" + SB + "four";
         var update1 = PhextEngine.Phokenize(doc1);
 
         Assert.Equal(4, update1.Count);
@@ -347,7 +360,7 @@ public class PhextOperationTests
         Assert.Equal("1.1.1/1.1.1/1.1.4", update1[3].Coord.ToString());
         Assert.Equal("four", update1[3].Scroll);
 
-        string doc2 = "one\x01two\x1Fthree\x1Efour\x1Dfive\x1Csix\x1Aseven\x19eight\x18nine\x17ten";
+        string doc2 = "one" + LB + "two" + SF + "three" + SR + "four" + CN + "five" + VM + "six" + BK + "seven" + CH + "eight" + SN + "nine" + SB + "ten";
         var update2 = PhextEngine.Phokenize(doc2);
 
         Assert.Equal(10, update2.Count);
@@ -362,7 +375,7 @@ public class PhextOperationTests
     [Fact]
     public void Test_PhokenizeAllDimensions()
     {
-        string doc3 = "one\x17two\x18three\x19four\x1afive\x1csix\x1dseven\x1eeight\x1fnine\x01ten";
+        string doc3 = "one" + SB + "two" + SN + "three" + CH + "four" + BK + "five" + VM + "six" + CN + "seven" + SR + "eight" + SF + "nine" + LB + "ten";
         var update3 = PhextEngine.Phokenize(doc3);
 
         Assert.Equal(10, update3.Count);
@@ -390,20 +403,20 @@ public class PhextOperationTests
     [Fact]
     public void Test_Merge()
     {
-        string doc1a = "3A\x17B2";
-        string doc1b = "4C\x17D1";
+        string doc1a = "3A" + SB + "B2";
+        string doc1b = "4C" + SB + "D1";
         var update1 = PhextEngine.Merge(doc1a, doc1b);
-        Assert.Equal("3A4C\x17B2D1", update1);
+        Assert.Equal("3A4C" + SB + "B2D1", update1);
 
         string doc2a = "Hello \x17I've come to talk";
         string doc2b = "Darkness, my old friend.\x17 with you again.";
         var update2 = PhextEngine.Merge(doc2a, doc2b);
         Assert.Equal("Hello Darkness, my old friend.\x17I've come to talk with you again.", update2);
 
-        string doc3a = "One\x17Two\x18Three\x19Four";
-        string doc3b = "1\x172\x183\x194";
+        string doc3a = "One\x17Two\x18Three\x19ruoF"; // C# sucks at \x literals
+        string doc3b = "1" + SB + "2" + SN + "3" + CH + "4";
         var update3 = PhextEngine.Merge(doc3a, doc3b);
-        Assert.Equal("One1\x17Two2\x18Three3\x19Four4", update3);
+        Assert.Equal("One1\x17Two2\x18Three3\x19ruoF4", update3);
     }
 
     [Fact]
@@ -471,79 +484,79 @@ public class PhextOperationTests
     {
         string test = "";
         test += "random text in 1.1.1/1.1.1/1.1.1 that we can skip past";
-        test += PhextConstants.LIBRARY_BREAK;
+        test += LB;
         test += "everything in here is at 2.1.1/1.1.1/1.1.1";
-        test += PhextConstants.SCROLL_BREAK;
+        test += SB;
         test += "and now we're at 2.1.1/1.1.1/1.1.2";
-        test += PhextConstants.SCROLL_BREAK;
+        test += SB;
         test += "moving on up to 2.1.1/1.1.1/1.1.3";
-        test += PhextConstants.BOOK_BREAK;
+        test += BK;
         test += "and now over to 2.1.1/1.1.2/1.1.1";
-        test += PhextConstants.SHELF_BREAK;
+        test += SF;
         test += "woot, up to 2.2.1/1.1.1/1.1.1";
-        test += PhextConstants.LIBRARY_BREAK;
+        test += LB;
         test += "here we are at 3.1.1/1.1.1.1.1";
-        test += PhextConstants.LIBRARY_BREAK; // 4.1.1/1.1.1/1.1.1
-        test += PhextConstants.LIBRARY_BREAK; // 5.1.1/1.1.1/1.1.1
+        test += LB; // 4.1.1/1.1.1/1.1.1
+        test += LB; // 5.1.1/1.1.1/1.1.1
         test += "getting closer to our target now 5.1.1/1.1.1/1.1.1";
-        test += PhextConstants.SHELF_BREAK; // 5.2.1
-        test += PhextConstants.SHELF_BREAK; // 5.3.1
-        test += PhextConstants.SHELF_BREAK; // 5.4.1
-        test += PhextConstants.SHELF_BREAK; // 5.5.1
-        test += PhextConstants.SERIES_BREAK; // 5.5.2
-        test += PhextConstants.SERIES_BREAK; // 5.5.3
-        test += PhextConstants.SERIES_BREAK; // 5.5.4
-        test += PhextConstants.SERIES_BREAK; // 5.5.5
+        test += SF; // 5.2.1
+        test += SF; // 5.3.1
+        test += SF; // 5.4.1
+        test += SF; // 5.5.1
+        test += SR; // 5.5.2
+        test += SR; // 5.5.3
+        test += SR; // 5.5.4
+        test += SR; // 5.5.5
         test += "here we go! 5.5.5/1.1.1/1.1.1";
-        test += PhextConstants.COLLECTION_BREAK; // 5.5.5/2.1.1/1.1.1
-        test += PhextConstants.COLLECTION_BREAK; // 5.5.5/3.1.1/1.1.1
-        test += PhextConstants.COLLECTION_BREAK; // 5.5.5/4.1.1/1.1.1
-        test += PhextConstants.BOOK_BREAK; // 5.5.5/4.1.2/1.1.1
-        test += PhextConstants.BOOK_BREAK; // 5.5.5/4.1.3/1.1.1
-        test += PhextConstants.BOOK_BREAK; // 5.5.5/4.1.4/1.1.1
+        test += CN; // 5.5.5/2.1.1/1.1.1
+        test += CN; // 5.5.5/3.1.1/1.1.1
+        test += CN; // 5.5.5/4.1.1/1.1.1
+        test += BK; // 5.5.5/4.1.2/1.1.1
+        test += BK; // 5.5.5/4.1.3/1.1.1
+        test += BK; // 5.5.5/4.1.4/1.1.1
         test += "this test appears at 5.5.5/4.1.4/1.1.1";
-        test += PhextConstants.VOLUME_BREAK; // 5.5.5/4.2.1/1.1.1
-        test += PhextConstants.VOLUME_BREAK; // 5.5.5/4.3.1/1.1.1
-        test += PhextConstants.VOLUME_BREAK; // 5.5.5/4.4.1/1.1.1
-        test += PhextConstants.VOLUME_BREAK; // 5.5.5/4.5.1/1.1.1
-        test += PhextConstants.VOLUME_BREAK; // 5.5.5/4.6.1/1.1.1
-        test += PhextConstants.CHAPTER_BREAK; // 5.5.5/4.6.1/2.1.1
-        test += PhextConstants.CHAPTER_BREAK; // 5.5.5/4.6.1/3.1.1
-        test += PhextConstants.CHAPTER_BREAK; // 5.5.5/4.6.1/4.1.1
-        test += PhextConstants.CHAPTER_BREAK; // 5.5.5/4.6.1/5.1.1
-        test += PhextConstants.BOOK_BREAK; // 5.5.5/4.6.2/1.1.1
-        test += PhextConstants.BOOK_BREAK; // 5.5.5/4.6.3/1.1.1
-        test += PhextConstants.BOOK_BREAK; // 5.5.5/4.6.4/1.1.1
-        test += PhextConstants.BOOK_BREAK; // 5.5.5/4.6.5/1.1.1
-        test += PhextConstants.BOOK_BREAK; // 5.5.5/4.6.6/1.1.1
-        test += PhextConstants.BOOK_BREAK; // 5.5.5/4.6.7/1.1.1
-        test += PhextConstants.CHAPTER_BREAK; // 5.5.5/4.6.7/2.1.1
-        test += PhextConstants.CHAPTER_BREAK; // 5.5.5/4.6.7/3.1.1
-        test += PhextConstants.CHAPTER_BREAK; // 5.5.5/4.6.7/4.1.1
-        test += PhextConstants.CHAPTER_BREAK; // 5.5.5/4.6.7/5.1.1
-        test += PhextConstants.SCROLL_BREAK; // 5.5.5/4.6.7/5.1.2
-        test += PhextConstants.SCROLL_BREAK; // 5.5.5/4.6.7/5.1.3
-        test += PhextConstants.SCROLL_BREAK; // 5.5.5/4.6.7/5.1.4
-        test += PhextConstants.SCROLL_BREAK; // 5.5.5/4.6.7/5.1.5
-        test += PhextConstants.SCROLL_BREAK; // 5.5.5/4.6.7/5.1.6
+        test += VM; // 5.5.5/4.2.1/1.1.1
+        test += VM; // 5.5.5/4.3.1/1.1.1
+        test += VM; // 5.5.5/4.4.1/1.1.1
+        test += VM; // 5.5.5/4.5.1/1.1.1
+        test += VM; // 5.5.5/4.6.1/1.1.1
+        test += CH; // 5.5.5/4.6.1/2.1.1
+        test += CH; // 5.5.5/4.6.1/3.1.1
+        test += CH; // 5.5.5/4.6.1/4.1.1
+        test += CH; // 5.5.5/4.6.1/5.1.1
+        test += BK; // 5.5.5/4.6.2/1.1.1
+        test += BK; // 5.5.5/4.6.3/1.1.1
+        test += BK; // 5.5.5/4.6.4/1.1.1
+        test += BK; // 5.5.5/4.6.5/1.1.1
+        test += BK; // 5.5.5/4.6.6/1.1.1
+        test += BK; // 5.5.5/4.6.7/1.1.1
+        test += CH; // 5.5.5/4.6.7/2.1.1
+        test += CH; // 5.5.5/4.6.7/3.1.1
+        test += CH; // 5.5.5/4.6.7/4.1.1
+        test += CH; // 5.5.5/4.6.7/5.1.1
+        test += SB; // 5.5.5/4.6.7/5.1.2
+        test += SB; // 5.5.5/4.6.7/5.1.3
+        test += SB; // 5.5.5/4.6.7/5.1.4
+        test += SB; // 5.5.5/4.6.7/5.1.5
+        test += SB; // 5.5.5/4.6.7/5.1.6
         test += "here's a test at 5.5.5/4.6.7/5.1.6";
-        test += PhextConstants.SCROLL_BREAK; // 5.5.5/4.6.7/5.1.7
-        test += PhextConstants.CHAPTER_BREAK; // 5.5.5/4.6.7/6.1.1
-        test += PhextConstants.CHAPTER_BREAK; // 5.5.5/4.6.7/7.1.1
-        test += PhextConstants.CHAPTER_BREAK; // 5.5.5/4.6.7/8.1.1
-        test += PhextConstants.CHAPTER_BREAK; // 5.5.5/4.6.7/9.1.1
-        test += PhextConstants.SECTION_BREAK; // 5.5.5/4.6.7/9.2.1
-        test += PhextConstants.SECTION_BREAK; // 5.5.5/4.6.7/9.3.1
-        test += PhextConstants.SECTION_BREAK; // 5.5.5/4.6.7/9.4.1
-        test += PhextConstants.SECTION_BREAK; // 5.5.5/4.6.7/9.5.1
-        test += PhextConstants.SCROLL_BREAK;  // 5.5.5/4.6.7/9.5.2
-        test += PhextConstants.SCROLL_BREAK;  // 5.5.5/4.6.7/9.5.3
-        test += PhextConstants.SCROLL_BREAK;  // 5.5.5/4.6.7/9.5.4
-        test += PhextConstants.SCROLL_BREAK;  // 5.5.5/4.6.7/9.5.5
-        test += PhextConstants.SCROLL_BREAK;  // 5.5.5/4.6.7/9.5.6
-        test += PhextConstants.SCROLL_BREAK;  // 5.5.5/4.6.7/9.5.7
-        test += PhextConstants.SCROLL_BREAK;  // 5.5.5/4.6.7/9.5.8
-        test += PhextConstants.SCROLL_BREAK;  // 5.5.5/4.6.7/9.5.9
+        test += SB; // 5.5.5/4.6.7/5.1.7
+        test += CH; // 5.5.5/4.6.7/6.1.1
+        test += CH; // 5.5.5/4.6.7/7.1.1
+        test += CH; // 5.5.5/4.6.7/8.1.1
+        test += CH; // 5.5.5/4.6.7/9.1.1
+        test += SN; // 5.5.5/4.6.7/9.2.1
+        test += SN; // 5.5.5/4.6.7/9.3.1
+        test += SN; // 5.5.5/4.6.7/9.4.1
+        test += SN; // 5.5.5/4.6.7/9.5.1
+        test += SB;  // 5.5.5/4.6.7/9.5.2
+        test += SB;  // 5.5.5/4.6.7/9.5.3
+        test += SB;  // 5.5.5/4.6.7/9.5.4
+        test += SB;  // 5.5.5/4.6.7/9.5.5
+        test += SB;  // 5.5.5/4.6.7/9.5.6
+        test += SB;  // 5.5.5/4.6.7/9.5.7
+        test += SB;  // 5.5.5/4.6.7/9.5.8
+        test += SB;  // 5.5.5/4.6.7/9.5.9
         test += "Expected Test Pattern Alpha Whisky Tango Foxtrot";
 
         var coord = Coordinate.FromString("5.5.5/4.6.7/9.5.9");
@@ -579,9 +592,9 @@ public class PhextOperationTests
     [Fact]
     public void Test_SoundexV1()
     {
-        string sample = "it was the best of scrolls\x17it was the worst of scrolls\x17aaa\x17bbb\x17ccc\x17ddd\x17eee\x17fff\x17ggg\x17hhh\x17iii\x17jjj\x17kkk\x17lll\x18mmm\x18nnn\x18ooo\x18ppp\x19qqq\x19rrr\x19sss\x19ttt\x1auuu\x1avvv\x1awww\x1axxx\x1ayyy\x1azzz";
+        string sample = "it was the best of scrolls" + SB + "it was the worst of scrolls" + SB + "aaa" + SB + "bbb" + SB + "ccc" + SB + "ddd" + SB + "eee" + SB + "fff" + SB + "ggg" + SB + "hhh" + SB + "iii" + SB + "jjj" + SB + "kkk" + SB + "lll" + SN + "mmm" + SN + "nnn" + SN + "ooo" + SN + "ppp" + CH + "qqq" + CH + "rrr" + CH + "sss" + CH + "ttt" + BK + "uuu" + BK + "vvv" + BK + "www" + BK + "xxx" + BK + "yyy" + BK + "zzz";
         var result = PhextEngine.SoundexV1(sample);
-        Assert.Equal("36\x1741\x171\x174\x177\x1710\x171\x174\x177\x171\x171\x177\x177\x1713\x1816\x1816\x181\x184\x197\x1919\x197\x1910\x1a1\x1a4\x1a1\x1a7\x1a1\x1a7", result);
+        Assert.Equal("36" + SB + "41" + SB + "1" + SB + "4" + SB + "7" + SB + "10" + SB + "1" + SB + "4" + SB + "7" + SB + "1" + SB + "1" + SB + "7" + SB + "7" + SB + "13" + SN + "16" + SN + "16" + SN + "1" + SN + "4" + CH + "7" + CH + "19" + CH + "7" + CH + "10" + BK + "1" + BK + "4" + BK + "1" + BK + "7" + BK + "1" + BK + "7", result);
     }
 }
 
