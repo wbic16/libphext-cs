@@ -49,7 +49,7 @@ For example: `5.5.5/4.6.7/9.5.9`
 Add the library to your project:
 
 ```bash
-dotnet add package LibPhext
+dotnet add package libphext
 ```
 
 Or clone and build from source:
