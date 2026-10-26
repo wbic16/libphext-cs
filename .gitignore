@@ -3,3 +3,5 @@ src/Phext/bin/*
 src/Phext/obj/*
 tests/bin/*
 tests/obj/*
+bench/Phext.Bench/bin/*
+bench/Phext.Bench/obj/*

@@ -146,6 +146,16 @@ The test suite includes comprehensive tests ported from libphext-rs:
 - Dead reckoning navigation
 - Phokenize and dephokenize
 - Performance tests
+- Differential tests against the original phokenize (linear-time regression)
+
+## Benchmarking
+
+```bash
+dotnet run -c Release --project bench/Phext.Bench -- path/to/file.phext [coordinate] [--out dir]
+```
+
+Times `Explode`, `Implode`, `Textmap`, `Index` and `Fetch` on one document. `--out` writes each result to a
+directory so two builds can be compared byte for byte. The benchmark is not part of the package.
 
 ## Project Structure
 
@@ -161,9 +171,14 @@ libphext-cs/
 │       ├── Range.cs
 │       ├── SubspaceBeacon.cs
 │       └── PhextEngine.cs
-└── tests/
-    ├── Phext.Tests.csproj
-    └── PhextTests.cs
+├── tests/
+│   ├── Phext.Tests.csproj
+│   ├── PhextTests.cs
+│   └── PhokenizeTests.cs
+└── bench/
+    └── Phext.Bench/
+        ├── Phext.Bench.csproj
+        └── Program.cs
 ```
 
 ## Why Phext?
