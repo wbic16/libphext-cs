@@ -102,46 +102,41 @@ public class PhextEngine
         int stage = 0;
         int max = subspace.Length;
 
+        // The walker only moves on a dimension break, so compare it with the target once per
+        // break instead of several times per byte.
+        int order = walker.CompareTo(target);
+
         while (subspaceIndex < max)
         {
             byte next = subspace[subspaceIndex];
-            char compare = (char)next;
 
             if (stage == 0)
             {
-                if (walker == target)
+                if (order == 0)
                 {
                     stage = 1;
                     start = subspaceIndex;
                     best.CopyFrom(walker);
                 }
-                if (walker < target)
+                if (order < 0)
                 {
                     best.CopyFrom(walker);
                 }
             }
 
-            if (stage < 2 && walker > target)
+            if (stage < 2 && order > 0)
             {
                 if (stage == 0) start = subspaceIndex - 1;
                 end = subspaceIndex - 1;
                 stage = 2;
             }
 
-            if (PhextConstants.IsPhextBreak(next))
+            if (ApplyBreak(walker, next))
             {
-                if (compare == PhextConstants.SCROLL_BREAK) walker.ScrollBreak();
-                if (compare == PhextConstants.SECTION_BREAK) walker.SectionBreak();
-                if (compare == PhextConstants.CHAPTER_BREAK) walker.ChapterBreak();
-                if (compare == PhextConstants.BOOK_BREAK) walker.BookBreak();
-                if (compare == PhextConstants.VOLUME_BREAK) walker.VolumeBreak();
-                if (compare == PhextConstants.COLLECTION_BREAK) walker.CollectionBreak();
-                if (compare == PhextConstants.SERIES_BREAK) walker.SeriesBreak();
-                if (compare == PhextConstants.SHELF_BREAK) walker.ShelfBreak();
-                if (compare == PhextConstants.LIBRARY_BREAK) walker.LibraryBreak();
+                order = walker.CompareTo(target);
             }
 
-            if (stage < 2 && walker > target)
+            if (stage < 2 && order > 0)
             {
                 end = subspaceIndex;
                 stage = 2;
@@ -150,7 +145,7 @@ public class PhextEngine
             subspaceIndex++;
         }
 
-        if (stage == 1 && walker == target)
+        if (stage == 1 && order == 0)
         {
             end = max;
             stage = 2;
@@ -416,22 +411,74 @@ public class PhextEngine
     /// <summary>
     /// Transforms a packed phext buffer into a list of positioned scrolls (phokens)
     /// </summary>
+    /// <remarks>
+    /// Single pass over the UTF-8 encoding of the buffer. This produces exactly what calling
+    /// <see cref="NextScroll"/> in a loop produces, without re-encoding and copying the rest of
+    /// the document for every scroll (which made large documents quadratic). Dimension breaks
+    /// are ASCII, so they never occur inside a multibyte UTF-8 sequence and every scroll is a
+    /// whole run of characters.
+    /// </remarks>
     public static List<PositionedScroll> Phokenize(string phext)
     {
+        byte[] p = Encoding.UTF8.GetBytes(phext);
         var result = new List<PositionedScroll>();
-        var coord = new Coordinate();
-        string temp = phext;
+        var location = new Coordinate();
+        int pi = 0;
+        int pmax = p.Length;
 
         while (true)
         {
-            var (item, nextCoord, remaining) = NextScroll(temp, coord);
-            result.Add(item);
-            coord = nextCoord;
-            temp = remaining;
-            if (string.IsNullOrEmpty(temp)) break;
+            // One NextScroll step: skip leading breaks, take the run of text, consume the break after it.
+            var begin = new Coordinate(location);
+            int textStart = -1;
+            int textEnd = pmax;
+
+            while (pi < pmax)
+            {
+                byte test = p[pi];
+                if (ApplyBreak(location, test))
+                {
+                    if (textStart >= 0)
+                    {
+                        textEnd = pi;
+                        pi++;
+                        break;
+                    }
+                }
+                else if (textStart < 0)
+                {
+                    textStart = pi;
+                    begin.CopyFrom(location);
+                }
+                pi++;
+            }
+
+            string scroll = textStart >= 0 ? Encoding.UTF8.GetString(p, textStart, textEnd - textStart) : "";
+            result.Add(new PositionedScroll(begin, scroll));
+            if (pi >= pmax) break;
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Advances the coordinate if the byte is a dimension break (line breaks excluded)
+    /// </summary>
+    private static bool ApplyBreak(Coordinate location, byte test)
+    {
+        switch ((char)test)
+        {
+            case PhextConstants.SCROLL_BREAK: location.ScrollBreak(); return true;
+            case PhextConstants.SECTION_BREAK: location.SectionBreak(); return true;
+            case PhextConstants.CHAPTER_BREAK: location.ChapterBreak(); return true;
+            case PhextConstants.BOOK_BREAK: location.BookBreak(); return true;
+            case PhextConstants.VOLUME_BREAK: location.VolumeBreak(); return true;
+            case PhextConstants.COLLECTION_BREAK: location.CollectionBreak(); return true;
+            case PhextConstants.SERIES_BREAK: location.SeriesBreak(); return true;
+            case PhextConstants.SHELF_BREAK: location.ShelfBreak(); return true;
+            case PhextConstants.LIBRARY_BREAK: location.LibraryBreak(); return true;
+            default: return false;
+        }
     }
 
     /// <summary>
