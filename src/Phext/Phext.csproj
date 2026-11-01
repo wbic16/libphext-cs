@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Phext</RootNamespace>
     <AssemblyName>libphext</AssemblyName>
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <Authors>Will Bickford</Authors>
     <Company>Phext, Inc.</Company>
     <Description>The Fourth Root - C# implementation of phext (11-dimensional plain hypertext)</Description>
