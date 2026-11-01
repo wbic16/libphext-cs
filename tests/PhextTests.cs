@@ -66,7 +66,39 @@ public class CoordinateTests : Constants
         Assert.True(c1.IsValid());
 
         var c2 = Coordinate.FromString("1001.1002.1003/1004.1005.1006/1007.1008.1009");
-        Assert.False(c2.IsValid()); // exceeds max of 1000
+        Assert.True(c2.IsValid()); // components are unbounded as of 0.4.0 (the 999 cap was removed)
+    }
+
+    [Fact]
+    public void Test_CoordinateParsingAbove999()
+    {
+        string exampleCoordinate = "1001.1002.1003/1004.1005.1006/1007.1008.1009";
+        var test = Coordinate.FromString(exampleCoordinate);
+        Assert.True(test.IsValid());
+        Assert.Equal(exampleCoordinate, test.ToString());
+        Assert.Equal("1001.1002.1003;1004.1005.1006;1007.1008.1009", test.ToUrlEncoded());
+
+        var constructed = new Coordinate(1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009);
+        Assert.Equal(test, constructed);
+        Assert.Equal(exampleCoordinate, constructed.ToString());
+    }
+
+    [Fact]
+    public void Test_BreaksAdvanceAbove999()
+    {
+        var coord = Coordinate.FromString("1.1.1/1.1.1/1.1.999");
+        coord.ScrollBreak();
+        Assert.Equal("1.1.1/1.1.1/1.1.1000", coord.ToString());
+        coord.ScrollBreak();
+        Assert.Equal("1.1.1/1.1.1/1.1.1001", coord.ToString());
+
+        var chapter = Coordinate.FromString("1.1.1/1.1.1/999.5.5");
+        chapter.ChapterBreak();
+        Assert.Equal("1.1.1/1.1.1/1000.1.1", chapter.ToString());
+
+        var library = Coordinate.FromString("999.1.1/1.1.1/1.1.1");
+        library.LibraryBreak();
+        Assert.Equal("1000.1.1/1.1.1/1.1.1", library.ToString());
     }
 
     [Fact]
@@ -566,6 +598,29 @@ public class PhextOperationTests
         var coord2 = Coordinate.FromString("5.5.5/4.6.7/5.1.6");
         var result2 = PhextEngine.Fetch(test, coord2);
         Assert.Equal("here's a test at 5.5.5/4.6.7/5.1.6", result2);
+    }
+
+    [Fact]
+    public void Test_ScrollsAbove999AreDistinct()
+    {
+        // 999 scroll breaks from the first scroll land on scroll 1000; one more lands on 1001.
+        // Under the pre-0.4.0 cap both would have saturated/aliased at 999.
+        string doc = "at-1" + new string(SB, 999) + "at-1000" + SB + "at-1001";
+
+        var coord1000 = Coordinate.FromString("1.1.1/1.1.1/1.1.1000");
+        Assert.Equal("at-1000", PhextEngine.Fetch(doc, coord1000));
+
+        var coord1001 = Coordinate.FromString("1.1.1/1.1.1/1.1.1001");
+        Assert.Equal("at-1001", PhextEngine.Fetch(doc, coord1001));
+
+        // Phokenize skips empty scrolls, but dead reckoning must still land on the exact coordinates.
+        var phokens = PhextEngine.Phokenize(doc);
+        Assert.Equal(3, phokens.Count);
+        Assert.Equal("1.1.1/1.1.1/1.1.1", phokens[0].Coord.ToString());
+        Assert.Equal("1.1.1/1.1.1/1.1.1000", phokens[1].Coord.ToString());
+        Assert.Equal("at-1000", phokens[1].Scroll);
+        Assert.Equal("1.1.1/1.1.1/1.1.1001", phokens[2].Coord.ToString());
+        Assert.Equal("at-1001", phokens[2].Scroll);
     }
 
     [Fact]

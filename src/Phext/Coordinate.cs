@@ -12,10 +12,17 @@ namespace Phext;
 /// Represents a 9-dimensional coordinate in phext address space.
 /// Format: library.shelf.series/collection.volume.book/chapter.section.scroll
 /// </summary>
+/// <remarks>
+/// Dense graphs: phext is sparse by design. Coordinate components are unbounded, but a
+/// fully-populated dense graph contains the product of its dimensions' extents in scrolls —
+/// a dense block spanning 1000 in each of 9 dimensions implies 10^27 scrolls. Materializing,
+/// exploding, or indexing such a graph costs memory proportional to its populated scroll
+/// count. The old 999 cap never protected against this (999^9 was already unreachable);
+/// sparsity does. Keep graphs sparse.
+/// </remarks>
 public class Coordinate : IComparable<Coordinate>, IEquatable<Coordinate>
 {
     public const int COORDINATE_MINIMUM = 1;
-    public const int COORDINATE_MAXIMUM = 1000;
 
     // Z-arm: Library, Shelf, Series
     public int Library { get; set; }
@@ -109,7 +116,8 @@ public class Coordinate : IComparable<Coordinate>, IEquatable<Coordinate>
     }
 
     /// <summary>
-    /// Validates that all dimension indices are within bounds
+    /// Validates that all dimension indices are at or above the minimum
+    /// (components are unbounded above as of 0.4.0)
     /// </summary>
     public bool IsValid()
     {
@@ -119,10 +127,10 @@ public class Coordinate : IComparable<Coordinate>, IEquatable<Coordinate>
     }
 
     private static bool ValidateDimension(int index) =>
-        index >= COORDINATE_MINIMUM && index <= COORDINATE_MAXIMUM;
+        index >= COORDINATE_MINIMUM;
 
     private static int AdvanceCoordinate(int index) =>
-        index + 1 < COORDINATE_MAXIMUM ? index + 1 : index;
+        index + 1;
 
     // Dimension break methods - advance to next unit and reset lower dimensions
     public void LibraryBreak()
