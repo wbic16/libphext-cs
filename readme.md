@@ -161,6 +161,29 @@ dotnet run -c Release --project bench/Phext.Bench -- path/to/file.phext [coordin
 Times `Explode`, `Implode`, `Textmap`, `Index` and `Fetch` on one document. `--out` writes each result to a
 directory so two builds can be compared byte for byte. The benchmark is not part of the package.
 
+## Development and Release
+
+**Prerequisites (read first):**
+
+1. The **.NET SDK 8.0 or later** must be installed and `dotnet` on your PATH. The library and tests target `net8.0`. There is no way to build or test this repo without the SDK.
+2. Note: the 0.4.0 changes in this repo were prepared on a machine with **no .NET toolchain**, so their compilation is **still unverified** — the first `dotnet test` run on a machine with the SDK is the real check. Treat a green run there as the verification, and please report any failure as a 0.4.0 regression.
+
+**Test:**
+
+1. Run `scripts/test.sh`
+2. That runs exactly: `dotnet test`
+
+**Build:**
+
+1. Run `scripts/build.sh`
+2. That runs exactly: `dotnet build -c Release`
+
+**Publish (NuGet):**
+
+1. Set your nuget.org API key in the environment: `export NUGET_API_KEY=<your key>` (never put the key in a file in this repo).
+2. Run `scripts/publish.sh` — it runs the tests, then `dotnet pack -c Release`, prints exactly what will be published (package `libphext-cs`, version from `src/Phext/Phext.csproj`), and **stops**.
+3. Only when that output looks right, run `PUBLISH_CONFIRM=1 scripts/publish.sh` — only then does it run `dotnet nuget push` to nuget.org.
+
 ## Project Structure
 
 ```
