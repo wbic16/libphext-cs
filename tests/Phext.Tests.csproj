@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\src\Phext\Phext.csproj" />
+    <ProjectReference Include="..\src\Phext.Seal\Phext.Seal.csproj" />
   </ItemGroup>
 
 </Project>

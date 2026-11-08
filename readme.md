@@ -133,6 +133,34 @@ string contracted = PhextEngine.Contract(phext);  // library -> shelf -> series.
 | `Offset(phext, coord)` | Get byte offset of scroll |
 | `Index(phext)` | Get offset map as phext |
 
+## Binary Scrolls
+
+Phext scrolls are text (valid UTF-8). Arbitrary binary data rides as text via base64, in one canonical format that every phext implementation (Rust, Python, Node, C#, C, ...) must match byte-for-byte:
+
+```text
+phext-binary:1:base64
+<base64 body>
+```
+
+* Line 1 is exactly `phext-binary:1:base64`, followed by a single line break (0x0A).
+* The body is RFC 4648 base64: standard alphabet (`A-Z`, `a-z`, `0-9`, `+`, `/`), padding (`=`) required, no line wrapping, no whitespace.
+* An empty payload is the header line alone.
+* A scroll whose content begins with the header line is a binary scroll by definition — the format claims that namespace. A prefix-matching scroll whose body is not strict base64 is a *malformed* binary scroll; `FetchBinary` returns its bytes verbatim rather than failing.
+
+API (static class `BinaryScroll` in the core `Phext` assembly): `InsertBinary` / `ReplaceBinary` store a payload as a binary scroll unconditionally; `FetchBinary` returns the bytes at a coordinate (the decoded payload for a binary scroll, the scroll's own UTF-8 bytes otherwise, empty for an unoccupied coordinate). `EncodeScroll` / `DecodeScroll` / `IsBinaryScroll` expose the format itself.
+
+### The Ingestion Rule (canonical behaviour)
+
+> When non-UTF-8 data is observed in an incoming scroll update, we encode it with base64 verbatim.
+
+Byte-oriented entry points — `BinaryScroll.InsertBytes`, `BinaryScroll.ReplaceBytes`, and `BinaryScroll.Ingest` for whole externally supplied phext byte streams — never reject and never throw on non-UTF-8 scroll data. Valid UTF-8 is stored as ordinary text; anything else is stored as a binary scroll holding the base64 of the exact observed bytes, verbatim, with no normalisation, so the matching fetch returns the original bytes exactly. Within a phext byte stream the nine dimension-break bytes are always structural; binary payloads that may contain them enter through the update functions, armoured as base64. `BinaryScroll.PhokenizeBytes` is the byte-level twin of `Phokenize`, returning `PositionedByteScroll` pairs.
+
+## The XZ Seal
+
+Compression is a seal, not a working format. A phext is authored, edited, and queried as plain text; when a phext is finished — archived, published, or transported — it may be sealed: xz-compressed as a whole. `PhextSeal.Seal` produces a standard xz stream (liblzma) over the phext's exact bytes, encoded at preset 6 with the CRC64 check (the preset is an encoder choice, not a format requirement; any valid xz stream unseals). `PhextSeal.Unseal` restores the exact original bytes, and sealing is deterministic for a given encoder and preset. To unseal foreign content that may carry non-UTF-8 scrolls, unseal to bytes (`Unseal`) and pass them through `BinaryScroll.Ingest`.
+
+The seal lives in the companion assembly **`Phext.Seal`** (namespace `Phext.Seal`, static class `PhextSeal`), because .NET has no built-in xz support: it depends on the Joveler.Compression.XZ package, which bundles the native liblzma for Windows, Linux, and macOS. The core `Phext` assembly stays dependency-free — the same split as libphext-rs gating these capabilities behind its `binary` / `xz` features (binary support above is in the core assembly here, as it needs no dependency).
+
 ## Testing
 
 ```bash
@@ -191,17 +219,24 @@ libphext-cs/
 ├── libphext-cs.sln
 ├── README.md
 ├── src/
-│   └── Phext/
-│       ├── Phext.csproj
-│       ├── Coordinate.cs
-│       ├── PositionedScroll.cs
-│       ├── Range.cs
-│       ├── SubspaceBeacon.cs
-│       └── PhextEngine.cs
+│   ├── Phext/
+│   │   ├── Phext.csproj
+│   │   ├── Coordinate.cs
+│   │   ├── PositionedScroll.cs
+│   │   ├── PositionedByteScroll.cs
+│   │   ├── BinaryScroll.cs
+│   │   ├── Range.cs
+│   │   ├── SubspaceBeacon.cs
+│   │   └── PhextEngine.cs
+│   └── Phext.Seal/
+│       ├── Phext.Seal.csproj
+│       └── PhextSeal.cs
 ├── tests/
 │   ├── Phext.Tests.csproj
 │   ├── PhextTests.cs
-│   └── PhokenizeTests.cs
+│   ├── PhokenizeTests.cs
+│   ├── BinaryTests.cs
+│   └── SealTests.cs
 └── bench/
     └── Phext.Bench/
         ├── Phext.Bench.csproj

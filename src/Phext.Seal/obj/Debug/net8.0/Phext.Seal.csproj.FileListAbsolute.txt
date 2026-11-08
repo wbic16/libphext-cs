@@ -1,0 +1,13 @@
+/home/wbic16/libphext-cs-050/src/Phext.Seal/bin/Debug/net8.0/Phext.Seal.deps.json
+/home/wbic16/libphext-cs-050/src/Phext.Seal/bin/Debug/net8.0/Phext.Seal.dll
+/home/wbic16/libphext-cs-050/src/Phext.Seal/bin/Debug/net8.0/Phext.Seal.pdb
+/home/wbic16/libphext-cs-050/src/Phext.Seal/obj/Debug/net8.0/Phext.Seal.csproj.AssemblyReference.cache
+/home/wbic16/libphext-cs-050/src/Phext.Seal/obj/Debug/net8.0/Phext.Seal.GeneratedMSBuildEditorConfig.editorconfig
+/home/wbic16/libphext-cs-050/src/Phext.Seal/obj/Debug/net8.0/Phext.Seal.AssemblyInfoInputs.cache
+/home/wbic16/libphext-cs-050/src/Phext.Seal/obj/Debug/net8.0/Phext.Seal.AssemblyInfo.cs
+/home/wbic16/libphext-cs-050/src/Phext.Seal/obj/Debug/net8.0/Phext.Seal.csproj.CoreCompileInputs.cache
+/home/wbic16/libphext-cs-050/src/Phext.Seal/obj/Debug/net8.0/Phext.Seal.sourcelink.json
+/home/wbic16/libphext-cs-050/src/Phext.Seal/obj/Debug/net8.0/Phext.Seal.dll
+/home/wbic16/libphext-cs-050/src/Phext.Seal/obj/Debug/net8.0/refint/Phext.Seal.dll
+/home/wbic16/libphext-cs-050/src/Phext.Seal/obj/Debug/net8.0/Phext.Seal.pdb
+/home/wbic16/libphext-cs-050/src/Phext.Seal/obj/Debug/net8.0/ref/Phext.Seal.dll

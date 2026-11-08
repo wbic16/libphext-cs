@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "+XxvVXxSSkU=",
+  "success": true,
+  "projectFilePath": "/home/wbic16/libphext-cs-050/src/Phext.Seal/Phext.Seal.csproj",
+  "expectedPackageFiles": [
+    "/home/wbic16/.nuget/packages/joveler.compression.xz/5.0.2/joveler.compression.xz.5.0.2.nupkg.sha512",
+    "/home/wbic16/.nuget/packages/joveler.dynloader/2.3.1/joveler.dynloader.2.3.1.nupkg.sha512"
+  ],
+  "logs": []
+}

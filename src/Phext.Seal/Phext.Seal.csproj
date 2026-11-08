@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Phext.Seal</RootNamespace>
+    <AssemblyName>Phext.Seal</AssemblyName>
+    <Version>0.5.0</Version>
+    <Authors>Will Bickford</Authors>
+    <Company>Phext, Inc.</Company>
+    <Description>The xz seal for libphext-cs: canonical compression for a finished phext (companion to libphext-cs, mirrors the xz feature of libphext-rs)</Description>
+    <Copyright>Copyright (c) 2026 Phext, Inc.</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://phext.io</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/wbic16/libphext-cs</RepositoryUrl>
+    <PackageTags>phext;hypertext;xz;compression;seal</PackageTags>
+    <PackageId>Phext.Seal</PackageId>
+    <Title>Phext.Seal</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Joveler.Compression.XZ" Version="5.0.2" />
+  </ItemGroup>
+
+</Project>
