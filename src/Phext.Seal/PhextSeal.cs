@@ -25,6 +25,7 @@
 // dependency-free - this mirrors how libphext-rs gates the seal behind its `xz` feature.
 // ===========================================================================================================
 
+using System.Runtime.InteropServices;
 using System.Text;
 using Joveler.Compression.XZ;
 
@@ -35,14 +36,126 @@ public static class PhextSeal
     /// <summary>The xz preset this implementation seals with.</summary>
     public const int SealPreset = 6;
 
-    private static int _initialized;
+    private static readonly object InitLock = new();
+    private static bool _initialized;
 
     private static void EnsureInitialized()
     {
-        if (Interlocked.Exchange(ref _initialized, 1) == 0)
+        if (_initialized)
         {
-            XZInit.GlobalInit();
+            return;
         }
+
+        lock (InitLock)
+        {
+            if (_initialized)
+            {
+                return;
+            }
+
+            // Joveler's parameterless GlobalInit() cannot find liblzma on
+            // Windows: its loader only knows the system library names for
+            // Linux (liblzma.so.5) and macOS (liblzma.dylib) and throws
+            // PlatformNotSupportedException on Windows. Windows callers must
+            // pass the bundled native library path explicitly (the same
+            // construction Joveler's own USAGE.md prescribes), so resolve it
+            // on every platform and only fall back to the parameterless
+            // system search when no bundled copy exists.
+            string? libPath = ResolveNativeLibraryPath();
+            if (libPath != null)
+            {
+                XZInit.GlobalInit(libPath);
+            }
+            else
+            {
+                XZInit.GlobalInit();
+            }
+
+            // Latch success only. If GlobalInit throws, _initialized stays
+            // false and the next call retries (surfacing the real error),
+            // instead of every later call skipping init and dying inside
+            // XZStream with the misleading "Please call XZInit.GlobalInit()
+            // first!" message.
+            _initialized = true;
+        }
+    }
+
+    /// <summary>
+    /// Finds the liblzma binary bundled with Joveler.Compression.XZ under
+    /// the output directory's runtimes/&lt;rid&gt;/native folder (or flattened
+    /// beside the assembly). Returns null when no bundled copy is found;
+    /// on Windows, where there is no system-library fallback, that is a
+    /// hard error with the searched location in the message.
+    /// </summary>
+    private static string? ResolveNativeLibraryPath()
+    {
+        string platform;
+        string fileName;
+        bool windows;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            platform = "win";
+            fileName = "liblzma.dll";
+            windows = true;
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            platform = "linux";
+            fileName = "liblzma.so";
+            windows = false;
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            platform = "osx";
+            fileName = "liblzma.dylib";
+            windows = false;
+        }
+        else
+        {
+            return null;
+        }
+
+        string arch = RuntimeInformation.ProcessArchitecture switch
+        {
+            Architecture.X86 => "x86",
+            Architecture.X64 => "x64",
+            Architecture.Arm => "arm",
+            Architecture.Arm64 => "arm64",
+            _ => "x64",
+        };
+        string rid = $"{platform}-{arch}";
+
+        var bases = new List<string> { AppContext.BaseDirectory };
+        string? assemblyDir = Path.GetDirectoryName(typeof(PhextSeal).Assembly.Location);
+        if (!string.IsNullOrEmpty(assemblyDir) && !bases.Contains(assemblyDir))
+        {
+            bases.Add(assemblyDir);
+        }
+
+        foreach (string baseDir in bases)
+        {
+            string bundled = Path.Combine(baseDir, "runtimes", rid, "native", fileName);
+            if (File.Exists(bundled))
+            {
+                return bundled;
+            }
+
+            string flat = Path.Combine(baseDir, fileName);
+            if (File.Exists(flat))
+            {
+                return flat;
+            }
+        }
+
+        if (windows)
+        {
+            throw new PlatformNotSupportedException(
+                $"Unable to find native library [runtimes\\{rid}\\native\\{fileName}] under " +
+                $"{AppContext.BaseDirectory}. Phext.Seal needs the liblzma binary bundled " +
+                "with the Joveler.Compression.XZ package.");
+        }
+
+        return null;
     }
 
     /// <summary>Seals a phext: xz-compresses its full UTF-8 bytes.</summary>
