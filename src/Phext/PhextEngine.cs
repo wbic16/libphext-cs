@@ -34,6 +34,7 @@
 //   11         LB           Library (0x01)
 // ===========================================================================================================
 
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -53,6 +54,8 @@ public static class PhextConstants
     public const char COLLECTION_BREAK = '\x1D'; // 8D Break - replaces group separator
     public const char SERIES_BREAK = '\x1E';     // 9D Break - replaces record separator
     public const char SHELF_BREAK = '\x1F';      // 10D Break - replaces unit separator
+    public const char CHAIN_BREAK = '\x02';      // stream level - separates whole phexts within a chain; replaces start of text
+    public const char CHAIN_CLOSE = '\x03';      // stream level - terminates a chain; replaces end of text
 
     // Address format delimiters
     public const char ADDRESS_MICRO_BREAK = '.';
@@ -87,6 +90,91 @@ public class PhextEngine
     public static bool CheckForCowbell(string phext)
     {
         return phext.Contains(PhextConstants.MORE_COWBELL);
+    }
+
+
+    /// <summary>
+    /// Splits a string on a delimiter, preserving empty segments and a trailing
+    /// empty tail (the semantics of Rust's str::split, which the reference
+    /// implementation's split_on mirrors).
+    /// </summary>
+    private static List<string> SplitOn(string s, char delim)
+    {
+        return new List<string>(s.Split(delim));
+    }
+
+    /// <summary>
+    /// Splits a stream into its chains. CHAIN_BREAK separates the member phexts
+    /// of a chain; CHAIN_CLOSE terminates a chain, and whatever follows it opens
+    /// the next one — so one stream may hold many chains. The stream's final
+    /// chain is closed only when the stream ends with CHAIN_CLOSE.
+    /// Splitting follows split semantics, so empty members and empty chains are
+    /// preserved exactly: parse and serialize are byte-exact inverses for every
+    /// stream.
+    /// </summary>
+    public static List<Chain> ParseChains(string input)
+    {
+        bool endsClosed = input.EndsWith(PhextConstants.CHAIN_CLOSE);
+        var segments = SplitOn(input, PhextConstants.CHAIN_CLOSE);
+        if (endsClosed)
+        {
+            // Split preserves the empty tail after a trailing delimiter; that
+            // tail is the end of the stream, not the start of another chain
+            segments.RemoveAt(segments.Count - 1);
+        }
+        int count = segments.Count;
+        var chains = new List<Chain>();
+        for (int i = 0; i < count; i++)
+        {
+            bool closed = endsClosed || i + 1 < count;
+            chains.Add(new Chain(SplitOn(segments[i], PhextConstants.CHAIN_BREAK), closed));
+        }
+        return chains;
+    }
+
+    /// <summary>
+    /// Serializes a stream of chains back into stream bytes: the inverse of
+    /// <see cref="ParseChains"/>.
+    /// </summary>
+    public static string SerializeChains(List<Chain> chains)
+    {
+        var result = new StringBuilder();
+        foreach (var chain in chains)
+        {
+            result.Append(chain.Serialize());
+        }
+        return result.ToString();
+    }
+
+    /// <summary>
+    /// Parses a multiverse address: "$N:coord" names a scroll in universe N of a
+    /// chain; a bare coordinate means universe 1. Returns null for a malformed
+    /// universe prefix (missing colon, non-numeric N, or N below 1 — "$0:" is
+    /// invalid), mirroring the reference's parse_universe_address.
+    /// </summary>
+    public static (int Universe, Coordinate Coordinate)? ParseUniverseAddress(string address)
+    {
+        int universe;
+        string coordPart;
+        if (address.StartsWith('$'))
+        {
+            string rest = address.Substring(1);
+            int colon = rest.IndexOf(':');
+            if (colon < 0) return null;
+            string num = rest.Substring(0, colon);
+            if (!int.TryParse(num, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out universe))
+            {
+                return null;
+            }
+            if (universe < 1) return null;
+            coordPart = rest.Substring(colon + 1);
+        }
+        else
+        {
+            universe = 1;
+            coordPart = address;
+        }
+        return (universe, Coordinate.FromString(coordPart));
     }
 
     /// <summary>
