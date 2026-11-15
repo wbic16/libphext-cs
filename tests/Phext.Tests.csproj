@@ -31,6 +31,9 @@
     <None Update="fixtures\chains\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="fixtures\ranges\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="regression-1-helios.phext">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

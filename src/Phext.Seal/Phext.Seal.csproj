@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Phext.Seal</RootNamespace>
     <AssemblyName>Phext.Seal</AssemblyName>
-    <Version>0.6.0</Version>
+    <Version>0.6.1</Version>
     <Authors>Will Bickford</Authors>
     <Company>Phext, Inc.</Company>
     <Description>The xz seal for libphext-cs: canonical compression for a finished phext (companion to libphext-cs, mirrors the xz feature of libphext-rs)</Description>

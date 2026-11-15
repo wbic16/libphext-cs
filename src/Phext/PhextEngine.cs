@@ -970,4 +970,171 @@ public class PhextEngine
         string offsetStr = Fetch(index, fetchCoord);
         return int.TryParse(offsetStr, out int result) ? result : 0;
     }
+
+    // -------------------------------------------------------------------------------------------------------
+    // Line/column addressing (v0.6.1, Will 2026-11-15; range syntax ratified 2026-11-15).
+    //
+    // A point address is "[$N:]<9D coordinate>@<line>,<column>": the multiverse prefix and
+    // the coordinate exactly as in ParseUniverseAddress, plus a within-scroll caret position.
+    // Line and column are 1-based; a position names a caret boundary (column 1 is the boundary
+    // before the line's first character; a line of n characters has valid columns 1..n+1), and
+    // columns count Unicode scalar values. A point may carry "+<offsetChars>": select forward
+    // that many characters (scalars) from the point, counted within the scroll, terminating at
+    // the scroll boundary.
+    //
+    // A range address is two point addresses joined by one hyphen: "<point>-<point>". The
+    // endpoints may span scrolls and universes; an endpoint without "@" names its whole scroll
+    // (as start: its first boundary; as end: its last). Canonical form: endpoints in ascending
+    // (universe, coordinate, line, column) order — direction is discarded — "$1:" never written,
+    // integers in minimal decimal form. Out-of-range endpoints fail at resolution, never clamp.
+    // -------------------------------------------------------------------------------------------------------
+
+    private static int? ParseAddressUInt(string text)
+    {
+        if (text.Length == 0) return null;
+        long value = 0;
+        foreach (char c in text)
+        {
+            if (c < '0' || c > '9') return null;
+            value = value * 10 + (c - '0');
+            if (value > int.MaxValue) return null;
+        }
+        return (int)value;
+    }
+
+    private static Coordinate? ParseAddressCoordinate(string text)
+    {
+        string[] arms = text.Split('/');
+        if (arms.Length != 3) return null;
+        var values = new int[9];
+        int vi = 0;
+        foreach (string arm in arms)
+        {
+            string[] parts = arm.Split('.');
+            if (parts.Length != 3) return null;
+            foreach (string part in parts)
+            {
+                int? value = ParseAddressUInt(part);
+                if (value is null || value.Value < 1) return null;
+                values[vi++] = value.Value;
+            }
+        }
+        return new Coordinate(values[0], values[1], values[2], values[3], values[4],
+                              values[5], values[6], values[7], values[8]);
+    }
+
+    /// <summary>
+    /// Parses a v0.6.1 point address: "[$N:]&lt;coordinate&gt;[@&lt;line&gt;,&lt;column&gt;[+&lt;offsetChars&gt;]]".
+    /// Returns null on any malformed input: universe 0, a coordinate component below 1, a line
+    /// or column below 1, a sign anywhere, or trailing structure. "$1:" is accepted on input;
+    /// the canonical <see cref="PointAddress.ToString"/> form never emits it.
+    /// </summary>
+    public static PointAddress? ParsePointAddress(string address)
+    {
+        int universe;
+        string rest;
+        if (address.StartsWith('$'))
+        {
+            string stripped = address.Substring(1);
+            int colon = stripped.IndexOf(':');
+            if (colon < 0) return null;
+            int? n = ParseAddressUInt(stripped.Substring(0, colon));
+            if (n is null || n.Value < 1) return null;
+            universe = n.Value;
+            rest = stripped.Substring(colon + 1);
+        }
+        else
+        {
+            universe = 1;
+            rest = address;
+        }
+
+        string coordPart;
+        string? posPart;
+        int at = rest.IndexOf('@');
+        if (at >= 0)
+        {
+            coordPart = rest.Substring(0, at);
+            posPart = rest.Substring(at + 1);
+            if (posPart.Contains('@')) return null;
+        }
+        else
+        {
+            coordPart = rest;
+            posPart = null;
+        }
+
+        Coordinate? coordinate = ParseAddressCoordinate(coordPart);
+        if (coordinate is null) return null;
+
+        ScrollPosition? position = null;
+        int? offset = null;
+        if (posPart is not null)
+        {
+            int comma = posPart.IndexOf(',');
+            if (comma < 0) return null;
+            string linePart = posPart.Substring(0, comma);
+            string colPart = posPart.Substring(comma + 1);
+            int? line = ParseAddressUInt(linePart);
+            if (line is null) return null;
+
+            string colText;
+            int? offsetValue = null;
+            int plus = colPart.IndexOf('+');
+            if (plus >= 0)
+            {
+                colText = colPart.Substring(0, plus);
+                offsetValue = ParseAddressUInt(colPart.Substring(plus + 1));
+                if (offsetValue is null) return null;
+            }
+            else
+            {
+                colText = colPart;
+            }
+            int? column = ParseAddressUInt(colText);
+            if (column is null) return null;
+            if (line.Value < 1 || column.Value < 1) return null;
+            position = new ScrollPosition(line.Value, column.Value);
+            offset = offsetValue;
+        }
+        return new PointAddress(universe, coordinate, position, offset);
+    }
+
+    private static (int Line, int Column) EndpointPositionKey(PointAddress point, bool isStart)
+    {
+        if (point.Position is ScrollPosition pos) return (pos.Line, pos.Column);
+        return isStart ? (1, 1) : (int.MaxValue, int.MaxValue);
+    }
+
+    private static int EndpointCmp(PointAddress a, bool aIsStart, PointAddress b, bool bIsStart)
+    {
+        if (a.Universe != b.Universe) return a.Universe.CompareTo(b.Universe);
+        int coord = a.Coordinate.CompareTo(b.Coordinate);
+        if (coord != 0) return coord;
+        return EndpointPositionKey(a, aIsStart).CompareTo(EndpointPositionKey(b, bIsStart));
+    }
+
+    /// <summary>
+    /// Parses a v0.6.1 range address: exactly two point addresses joined by one hyphen. The
+    /// endpoints are normalized to ascending order (direction is discarded, per the ratified
+    /// spec). Range endpoints may not carry a "+offset" — the offset form never takes a second
+    /// endpoint. Returns null on malformed input.
+    /// </summary>
+    public static RangeAddress? ParseRangeAddress(string address)
+    {
+        int hyphen = address.IndexOf('-');
+        if (hyphen < 0) return null;
+        string first = address.Substring(0, hyphen);
+        string second = address.Substring(hyphen + 1);
+        if (second.Contains('-')) return null;
+        PointAddress? a = ParsePointAddress(first);
+        PointAddress? b = ParsePointAddress(second);
+        if (a is null || b is null) return null;
+        if (a.Offset is not null || b.Offset is not null) return null;
+        if (EndpointCmp(a, true, b, false) > 0)
+        {
+            return new RangeAddress(b, a);
+        }
+        return new RangeAddress(a, b);
+    }
 }
