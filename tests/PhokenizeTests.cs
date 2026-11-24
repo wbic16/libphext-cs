@@ -90,6 +90,16 @@ public class PhokenizeTests : Constants
 
             if (stage < 2 && walker > target)
             {
+                // v0.7.0 oracle correction: when the walker crosses the
+                // target on a break byte, the target's (empty) scroll spans
+                // from this break, so start moves with end. The original
+                // scan left start at 0 here, which made PhextEngine.Replace
+                // drop the buffer's leading break for absent coordinates in
+                // a gap (shifting every later scroll one dimension) and made
+                // Fetch return a break character for such coordinates. The
+                // store equivalence gate caught it; see tests/StoreTests.cs
+                // StringPath_GapReplaceAndFetch.
+                if (stage == 0) start = subspaceIndex;
                 end = subspaceIndex;
                 stage = 2;
             }

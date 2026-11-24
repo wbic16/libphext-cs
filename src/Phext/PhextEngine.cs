@@ -226,6 +226,14 @@ public class PhextEngine
 
             if (stage < 2 && order > 0)
             {
+                // Crossing the target on a break byte: the (empty) scroll at
+                // the target spans from this break, so start must move with
+                // end. Leaving start at 0 made Replace drop the buffer's
+                // leading break (shifting every later scroll one dimension)
+                // and made Fetch return a break character for absent
+                // coordinates in a gap. Found by the v0.7.0 store equivalence
+                // gate; Insert was unaffected (it uses End only).
+                if (stage == 0) start = subspaceIndex;
                 end = subspaceIndex;
                 stage = 2;
             }
@@ -637,6 +645,19 @@ public class PhextEngine
         vec.Sort();
         return Dephokenize(vec);
     }
+
+    /// <summary>
+    /// Creates a DynamicPhext store (capacity-managed dynamic array, v0.7.0)
+    /// phokenized from the given buffer, for edit sequences against one phext.
+    /// </summary>
+    public static DynamicPhext Dynamic(string buffer = "") => new DynamicPhext(buffer);
+
+    /// <summary>
+    /// Creates a TransitivePhext store (branching hash maps, v0.7.0)
+    /// phokenized from the given buffer, for edit sequences and fetch-heavy
+    /// work against one phext.
+    /// </summary>
+    public static TransitivePhext Transitive(string buffer = "") => new TransitivePhext(buffer);
 
     /// <summary>
     /// Zipper-merges two phext documents
